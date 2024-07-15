@@ -1,8 +1,8 @@
+use directories::ProjectDirs;
 use serde::Deserialize;
-use std::env;
 use std::fs::OpenOptions;
 use std::io::Read;
-use std::path::PathBuf;
+use std::{env, process};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -44,28 +44,31 @@ struct DoneConfig {
 impl Config {
     pub fn from_file() -> Config {
         // get path
-        let mut path = PathBuf::from(env::var("HOME").unwrap());
-        path.push(".config");
-        path.push("todo");
-        path.push("config.toml");
+        if let Some(project_dir) = ProjectDirs::from("", "", "todo") {
+            let mut path = project_dir.config_dir().to_path_buf();
+            path.push("config.toml");
 
-        // TODO: util function `read_file`
-        // read confit.toml
-        let mut buf = String::new();
-        let _ = OpenOptions::new()
-            .read(true)
-            .open(&path)
-            .expect("Failed to open config file")
-            .read_to_string(&mut buf);
+            // TODO: util function `read_file`
+            // read confit.toml
+            let mut buf = String::new();
+            let _ = OpenOptions::new()
+                .read(true)
+                .open(&path)
+                .expect("Failed to open config file")
+                .read_to_string(&mut buf);
 
-        // parse config
-        let mut config = toml::from_str::<Config>(&buf).expect("Faild to parse config file");
+            // parse config
+            let mut config = toml::from_str::<Config>(&buf).expect("Faild to parse config file");
 
-        let home_dir = env::var("HOME").unwrap();
-        config.set_todo_path(&config.todo_path().replace('~', &home_dir));
-        config.set_bak_path(&config.bak_path().replace('~', &home_dir));
+            let home_dir = env::var("HOME").unwrap();
+            config.set_todo_path(&config.todo_path().replace('~', &home_dir));
+            config.set_bak_path(&config.bak_path().replace('~', &home_dir));
 
-        config
+            config
+        } else {
+            eprintln!("Failed to read config file");
+            process::exit(1)
+        }
     }
 
     pub fn todo_path(&self) -> &str {

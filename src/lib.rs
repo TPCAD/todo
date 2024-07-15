@@ -2,8 +2,8 @@ pub mod commands;
 pub mod config;
 pub mod item;
 
+use directories::ProjectDirs;
 use std::{
-    env,
     fs::{self, OpenOptions},
     io::{BufWriter, Write},
     path::PathBuf,
@@ -72,28 +72,30 @@ pub fn help() {
 
 pub fn prepare_config() {
     // get path
-    let mut path = PathBuf::from(env::var("HOME").unwrap());
-    path.push(".config");
-    path.push("todo");
+    if let Some(project_dir) = ProjectDirs::from("", "", "todo") {
+        let mut path = project_dir.config_dir().to_path_buf();
 
-    // create directories if not exist
-    fs::create_dir_all(&path).expect("Failed to create directories");
+        // create directories if not exist
+        fs::create_dir_all(&path).expect("Failed to create directories");
 
-    // create config.toml if not exist and write default config
-    path.push("config.toml");
-    if !path.exists() {
-        let config_file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(path)
-            .expect("Faild to create or open config file");
+        // create config.toml if not exist and write default config
+        path.push("config.toml");
+        if !path.exists() {
+            let config_file = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(path)
+                .expect("Faild to create or open config file");
 
-        let mut buffer = BufWriter::new(config_file);
+            let mut buffer = BufWriter::new(config_file);
 
-        buffer
-            .write_all(DEFAULT_CONFIG.as_bytes())
-            .expect("Failed to write config file");
-    }
+            buffer
+                .write_all(DEFAULT_CONFIG.as_bytes())
+                .expect("Failed to write config file");
+        }
+    } else {
+        eprintln!("No valid .config directory");
+    };
 }
 
 pub fn prepare_todo(path: &str) {
