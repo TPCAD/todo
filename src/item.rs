@@ -28,10 +28,7 @@ impl Items {
         match toml::from_str::<Items>(&buf) {
             Ok(items) => items.items,
             // Err(_) => Vec::<Item>::new(),
-            Err(e) => {
-                eprintln!("{e}");
-                Vec::<Item>::new()
-            }
+            Err(_) => Vec::<Item>::new(),
         }
     }
 
